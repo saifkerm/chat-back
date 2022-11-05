@@ -1,71 +1,68 @@
+import 'reflect-metadata';
 import express, { Application } from 'express';
 import { config } from 'dotenv';
+import { Container } from 'inversify';
 import cors from 'cors';
+
+// MIDDLEWARE
 import { UnknownRoutesInterceptor } from './middlewares/unknownRoutes.interceptor';
 import { ErrorsInterceptor } from './middlewares/errors.interceptor';
-import { authController } from './modules/auth/auth.controller';
+
+import { InversifyExpressServer } from 'inversify-express-utils';
+
+import './ioc';
+import { buildProviderModule } from 'inversify-binding-decorators';
 
 config();
 
 export class App {
-  public app;
+  protected _container: Container | undefined;
   protected _port: string;
 
   constructor(port: string) {
-    // Create a new express app
-    this.app = express();
-
     this._port = port;
   }
 
+  get container(): Container {
+    if (! this._container) {
+      this._container = new Container();
+      this._container.load(buildProviderModule());
+    }
+    return this._container;
+  }
+
   init(): void {
-    this.enableCors();
-    this.parseBody();
-    this.routes();
-    this.errorsMiddleware();
     this.startServer(this._port)
-  }
-
-  /**
-   *
-   * We tell Express that we want to authorize all domain names to make requests on our API.
-   */
-  protected enableCors(): void {
-    this.app.use(cors());
-  }
-
-  /**
-   * Parse body request to JSON
-   *
-   * @example app.post('/', (req) => req.body.prop)
-   */
-  protected parseBody(): void {
-    this.app.use(express.json());
-  }
-
-  protected errorsMiddleware(): void {
-    /**
-     * Intercept and return error 404 for unknown routes
-     */
-    this.app.use('*', UnknownRoutesInterceptor);
-
-    /**
-     * Attach error handling middleware functions after route handlers
-     */
-    this.app.use(ErrorsInterceptor);
-  }
-
-  protected routes(): void {
-    // console.log("yes => " , authController);
-    this.app.use('/auth', authController)
   }
 
   /**
    * Listen for requests on the port defined in the config
    */
   protected startServer(port: string): void {
-    // TODO: add control
-    this.app.listen(port, async () => {
+
+    const server: InversifyExpressServer = new InversifyExpressServer(this.container);
+
+    server.setConfig((app: Application) => {
+
+      // We tell Express that we want to authorize all domain names to make requests on our API.
+      app.use(cors());
+
+      // Parse body request to JSON
+      // @example app.post('/', (req) => req.body.prop)
+      app.use(express.json());
+    });
+
+    server.setErrorConfig((app: Application) => {
+      // Intercept and return error 404 for unknown routes
+      app.use('*', UnknownRoutesInterceptor);
+
+      // Attach error handling middleware functions after route handlers
+      app.use(ErrorsInterceptor);
+    });
+
+    const serverInstance: Application = server.build();
+
+    serverInstance.listen(port, async () => {
       console.log(`Server is listening on port ${port}`);
       // await dbConnection();
     });

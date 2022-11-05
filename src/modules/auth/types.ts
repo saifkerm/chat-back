@@ -1,4 +1,8 @@
-export type EMAIL = string;
-export type FIRSTNAME = string;
-export type LASTNAME = string;
-export type PASSWORD = string;
+export const AUTH_TYPES = {
+  AuthService: Symbol.for('AuthService')
+};
+
+
+export const AUTH_TAGS = {
+  AuthController: 'AuthController'
+};

@@ -1,36 +1,64 @@
-import { Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
+import { inject } from 'inversify';
+import { controller, httpGet, httpPost } from 'inversify-express-utils';
+import { AUTH_TYPES } from './types';
 import { AuthService } from './auth.service';
-import { login, logout, register, status } from './routes';
-import { IAuthService } from './interfaces';
-import { CreateUserDto } from './validators/CreateUser.dto';
+import { ROUTES } from '../../utils/constants';
+import { UserService } from '../users/user.service';
+import { CreateUserDetails, USER_TYPES } from '../users/types';
 import dtoValidationMiddleware from '../../middlewares/dto.middleware';
+import { CreateUserDto } from './validators/CreateUser.dto';
 
+@controller(ROUTES.AUTHENTICATION_ROOT_PATH)
 export class AuthController {
-  public authController: Router;
-  public _authService: IAuthService;
 
-  constructor(private authService: IAuthService) {
-    this.authController = Router();
-    this._authService = authService;
-    this.routes();
+  constructor(
+    @inject(AUTH_TYPES.AuthService) private authService: AuthService,
+    @inject(USER_TYPES.UserService) private userService: UserService
+  ) { }
+
+  @httpPost(
+    '/register',
+    dtoValidationMiddleware(CreateUserDto)
+  )
+  public async register (req: Request, res: Response, next: NextFunction): Promise<any> {
+    try {
+      console.log("body => ", req.body);
+
+      const body: CreateUserDetails = req.body;
+      this.userService.createUser(body);
+
+      return res.status(200).json({ test: "register" });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
   }
 
-  public routes() {
-    // POST
-    this.postApis();
-    // GET
-    this.getApis();
+  @httpGet('/login')
+  public async login (req: Request, res: Response, next: NextFunction): Promise<any> {
+    try {
+      return res.status(200).json({ test: "login" });
+    } catch (error) {
+      next(error);
+    }
   }
 
-  private getApis(): void {
-    this.authController.get('/', login);
-    this.authController.get('/', status);
+  @httpPost('/logout')
+  public async logout (req: Request, res: Response, next: NextFunction): Promise<any> {
+    try {
+      return res.status(200).json({ test: "logout" });
+    } catch (error) {
+      next(error);
+    }
   }
 
-  private postApis(): void {
-    this.authController.post('/register', dtoValidationMiddleware(CreateUserDto), register);
-    this.authController.post('/', logout);
+  @httpGet('/status')
+  public async status (req: Request, res: Response, next: NextFunction): Promise<any> {
+    try {
+      return res.status(200).json({ test: "status" });
+    } catch (error) {
+      next(error);
+    }
   }
 }
-
-export const { authController } = new AuthController(new AuthService());

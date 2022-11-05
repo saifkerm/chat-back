@@ -1,5 +1,5 @@
 import { IsEmail, IsNotEmpty, MaxLength } from 'class-validator';
-import { EMAIL, FIRSTNAME, LASTNAME, PASSWORD } from '../types';
+import { EMAIL, FIRSTNAME, LASTNAME, PASSWORD } from '../../../utils/constants';
 
 export class CreateUserDto {
   @IsEmail()

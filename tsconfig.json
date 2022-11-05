@@ -3,7 +3,13 @@
   "display": "Node 18",
   "compilerOptions": {
     "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "target": "ES2022",
+    "lib": [
+      "es6",
+      "dom"
+    ],
+    "types": ["reflect-metadata"],
     "module": "commonjs",
     "outDir": "./dist",
     "rootDir": "./src",
