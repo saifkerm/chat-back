@@ -12,6 +12,9 @@ import { InversifyExpressServer } from 'inversify-express-utils';
 
 import './ioc';
 import { buildProviderModule } from 'inversify-binding-decorators';
+import helmet from 'helmet';
+import { DbClient } from './db/client';
+import { MongoDBConnection } from './db/mongodb/connextion';
 
 config();
 
@@ -50,6 +53,9 @@ export class App {
       // Parse body request to JSON
       // @example app.post('/', (req) => req.body.prop)
       app.use(express.json());
+
+      // secure app by setting various HTTP headers.
+      app.use(helmet());
     });
 
     server.setErrorConfig((app: Application) => {
@@ -64,7 +70,11 @@ export class App {
 
     serverInstance.listen(port, async () => {
       console.log(`Server is listening on port ${port}`);
-      // await dbConnection();
+
+      // TODO use repository
+      await DbClient
+        .factory(MongoDBConnection)
+        .connect();
     });
   }
 }
